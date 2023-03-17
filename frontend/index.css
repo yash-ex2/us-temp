@@ -1,0 +1,25 @@
+* {
+  padding: 0;
+  box-sizing: border-box;
+  border: 0;
+  margin: 0;
+}
+body {
+  width: 100%;
+}
+
+.mapboxgl-popup {
+  max-width: 500px !important;
+}
+.mapboxgl-popup-content {
+  width: 80%;
+}
+.mapboxgl-popup-content div {
+  height: 640px !important;
+  width: 100% !important;
+}
+.mapboxgl-popup,
+.mapboxgl-popup-anchor-top {
+  min-width: 1000px !important;
+  position: relative;
+}

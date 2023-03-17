@@ -1,0 +1,22 @@
+const { Sequelize, DataTypes } = require("sequelize");
+const { sequelize } = require("../sequelize");
+
+const NationYearlyModel = sequelize.define(
+  "nation_yearly_data",
+  {
+    Year: {
+      type: DataTypes.INTEGER,
+    },
+    TempInC: {
+      type: DataTypes.FLOAT,
+    },
+    TempInF: {
+      type: DataTypes.FLOAT,
+    },
+  },
+  { underscored: true }
+);
+
+module.exports = {
+  NationYearlyModel,
+};
