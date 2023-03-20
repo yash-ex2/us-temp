@@ -45,18 +45,11 @@ const year = document.querySelector("#year");
 
 submit.addEventListener("click", (e) => {
   e.preventDefault();
-  window.location.href = `http://127.0.0.1:5501/frontend/?year-range=${year.value}&division=${division.value}`;
+  window.location.href = `http://127.0.0.1:5501/frontend/?year-range=${year.value}&division=${divison.value}`;
   alert("sddsd:" + year.value + divison.value);
 });
 
 async function addMarker(elementArr, coordinates, loc) {
-  let str = `<h3>Location : ${loc}</h3>`;
-  const div = document.createElement("div");
-  div.id = loc.replace(/ /g, "_");
-  div.classList.add = "markerPopUp";
-  div.style.position = "absolute";
-  div.style.width = "90%";
-  div.style.height = "400px";
   const marker2 = new mapboxgl.Marker({
     color: "black",
     rotation: 45,
@@ -68,17 +61,21 @@ async function addMarker(elementArr, coordinates, loc) {
       }).setHTML(
         `<div id=${loc.replace(/ /g, "_")} class="markerPopUp" onClick=f(\"${loc
           .replace(/ /g, "_")
-          .toString()}\",${JSON.stringify(elementArr)})></div>`
+          .toString()}\",${JSON.stringify(
+          elementArr
+        )})><h3>Click on this div to see chart<h3></div>`
       )
     )
     .addTo(map);
+  return marker2;
 }
+
 const div = {
   s: "state",
   c: "county",
   n: "nation",
 };
-const x = (jsonResp, scale = "c", code = "s") => {
+const x = async (jsonResp, scale = "c", code = "s") => {
   arr = {};
   const degScale = {
     c: "TempInC",
@@ -102,15 +99,16 @@ const x = (jsonResp, scale = "c", code = "s") => {
     }
     let data = await fetchCoordinates(loc);
     let coordinates = data.features[0].geometry.coordinates;
-    const marker = addMarker(arr[loc], coordinates, loc);
+    const marker = await addMarker(arr[loc], coordinates, loc);
+
+    const popup = marker.getPopup()._content.firstChild.click();
   });
 };
 
 async function plotGraph(arr, loc, deg = "C") {
-  const div = document.querySelector("#chartContainer");
   let chart = await new CanvasJS.Chart(loc, {
     exportEnabled: true,
-    theme: "light1", // "light1", "light2", "dark1", "dark2"
+    theme: "light1",
     title: {
       text: `Year Wise Temp in ${deg} For ${loc}`,
     },
@@ -119,25 +117,19 @@ async function plotGraph(arr, loc, deg = "C") {
     },
     data: [
       {
-        type: "column", //change type to bar, line, area, pie, etc
-        //indexLabel: "{y}", //Shows y value on all Data Points
+        type: "column",
         indexLabelFontColor: "#5A5757",
         indexLabelFontSize: 16,
         indexLabelPlacement: "outside",
         dataPoints: arr,
-        // dataPoints: [
-        //   { x: 1, y: 1 },
-        //   { x: 2, y: 2 },
-        //   { x: 10, y: 10 },
-        // ],
       },
     ],
   });
   await chart.render();
 }
 
-const f = (loc, elementArr) => {
+const f = async (loc, elementArr) => {
   const div = document.getElementById(loc);
   //const jsonRes = JSON.parse(elementArr);
-  plotGraph(elementArr, loc);
+  await plotGraph(elementArr, loc);
 };
