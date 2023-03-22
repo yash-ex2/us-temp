@@ -14,28 +14,54 @@
     <link rel="stylesheet" href="./index.css" />
     <title>Document</title>
   </head>
-  <body>
-    <form>
+  <body style="overflow-x: hidden">
+    <form method="post" id="form">
       <select name="division" id="division">
-        <option value="s">State</option>
-        <option value="c">County</option>
-        <option value="n">Nation</option>
+        <option value="state">State</option>
+        <option value="county">County</option>
+        <option value="nation">Nation</option>
       </select>
       <select name="scale" id="scale">
-        <option value="c">Celcius</option>
-        <option value="f">Fahrenheit</option>
+        <option value="celcius">Celcius</option>
+        <option value="fahrenheit">Fahrenheit</option>
       </select>
-      <select name="year-range" id="year">
+      <label for="#YearStart">Year From : </label>
+      <input
+        type="number"
+        min="1895"
+        max="2019"
+        step="1"
+        value="2015"
+        id="YearStart"
+      />
+      <label for="#YearEnd">To : </label>
+      <input
+        type="number"
+        min="1895"
+        max="2019"
+        step="1"
+        value="2015"
+        id="YearEnd"
+      />
+      <!-- <select name="year-range" id="year">
         <option value="1895">1895-1995</option>
         <option value="1995">1995-2005</option>
         <option value="2005">2005-2015</option>
         <option value="2015">2015-2019</option>
-      </select>
+      </select> -->
+
       <input type="submit" id="btnSubmit" />
     </form>
     <div id="map" style="width: 100%; height: 90vh"></div>
-    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <div id="chartContainer" class="modal">
+      <div class="modal-content" id="modal"></div>
+    </div>
 
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <!-- <div class="loader">
+      <img src="../frontend/loader.gif" alt="" />
+
+    </div> -->
     <script src="index.js"></script>
   </body>
 </html>

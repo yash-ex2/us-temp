@@ -1,55 +1,50 @@
-function getParams() {
-  const queryString = window.location.search;
-  const urlParams = new URLSearchParams(queryString);
-  return urlParams;
-}
+//TAG: Global Variables
+let yearStart = "1895";
+let yearEnd = "1905";
+let code = "nation";
+let scale = "celcius";
+let map;
 
-window.onload = async () => {
-  let code = getParams().get("division");
-  let year = getParams().get("year-range");
-  let scale = getParams().get("scale");
-  let jsonResp;
-  alert(code + year + scale);
-  jsonResp = await fetchfunc(code ? code : "s", year ? year : "2015");
-  x(jsonResp, scale ? scale : "c", code ? code : "s");
-};
+//TAG: CONSTANTS
+const submit = document.querySelector("#btnSubmit");
+const body = document.getElementsByTagName("body")[0];
+const form = document.querySelector("#from");
+const codeSelected = document.querySelector("#division");
+const yearSelected = document.querySelector("#year");
+const scaleSelected = document.querySelector("#scale");
+const loader = document.getElementsByClassName("loader")[0];
+const span = document.getElementsByClassName("close")[0];
+const modal = document.getElementById("chartContainer");
+const modalContent = modal.getElementsByClassName("modal-content")[0];
+const yearStartSelected = document.getElementById("YearStart");
+const yearEndSelected = document.getElementById("YearEnd");
+const plotDiv = document.getElementById("chartContainer");
+const baseUrl = `http://127.0.0.1:8000/v1`;
 
+// TAG: MAPBOX APIS AND SETTINGS
 mapboxgl.accessToken =
   "pk.eyJ1IjoieWFzaGdvZWwyOCIsImEiOiJjbGVjbjR1dGMxa3VyM3ZvNmszbWJiZjh2In0.mIWb0Fb03iisO3DHakRX9w";
-const map = new mapboxgl.Map({
-  container: "map", // container ID
-  style: "mapbox://styles/mapbox/streets-v12", // style URL
-  center: [-74.5, 40], // starting position [lng, lat]
-  zoom: 9, // starting zoom
-});
-
-async function fetchfunc(code = "s", year = "2015") {
-  let resp = await fetch(
-    `http://127.0.0.1:8000/v1/all?code=${code}&year=${year}`
-  );
-  let json = await resp.json();
-  return json;
-}
-
+const getMap = () => {
+  modal.style.display = "none";
+  const map = new mapboxgl.Map({
+    container: "map", // container ID
+    style: "mapbox://styles/mapbox/streets-v11", // v11 for 2d and v12 for 3d
+    center: [-97, 38], // starting position [lng, lat]
+    zoom: 5, // starting zoom
+  });
+  return map;
+};
+//geocoding:
 async function fetchCoordinates(loc) {
   let coordinates = await fetch(
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${loc}.json?limit=2&access_token=pk.eyJ1IjoieWFzaGdvZWwyOCIsImEiOiJjbGVjbjR1dGMxa3VyM3ZvNmszbWJiZjh2In0.mIWb0Fb03iisO3DHakRX9w`
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${loc}.json?country=us&limit=2&access_token=pk.eyJ1IjoieWFzaGdvZWwyOCIsImEiOiJjbGVjbjR1dGMxa3VyM3ZvNmszbWJiZjh2In0.mIWb0Fb03iisO3DHakRX9w`
   );
   let json = await coordinates.json();
   return json;
 }
 
-const submit = document.querySelector("#btnSubmit");
-const divison = document.querySelector("#division");
-const year = document.querySelector("#year");
-
-submit.addEventListener("click", (e) => {
-  e.preventDefault();
-  window.location.href = `http://127.0.0.1:5501/frontend/?year-range=${year.value}&division=${divison.value}`;
-  alert("sddsd:" + year.value + divison.value);
-});
-
-async function addMarker(elementArr, coordinates, loc) {
+//TAG: ADD MARKERS
+async function addMarker(coordinates) {
   const marker2 = new mapboxgl.Marker({
     color: "black",
     rotation: 45,
@@ -58,59 +53,118 @@ async function addMarker(elementArr, coordinates, loc) {
     .setPopup(
       new mapboxgl.Popup({
         offset: 25,
-      }).setHTML(
-        `<div id=${loc.replace(/ /g, "_")} class="markerPopUp" onClick=f(\"${loc
-          .replace(/ /g, "_")
-          .toString()}\",${JSON.stringify(
-          elementArr
-        )})><h3>Click on this div to see chart<h3></div>`
-      )
+      }).setHTML()
     )
     .addTo(map);
   return marker2;
 }
 
-const div = {
-  s: "state",
-  c: "county",
-  n: "nation",
+//TAG: EVENT LISTENERS
+body.onclick = () => {
+  modal.style.display = "none";
 };
-const x = async (jsonResp, scale = "c", code = "s") => {
-  arr = {};
-  const degScale = {
-    c: "TempInC",
-    f: "TempInF",
-  };
+window.onload = async () => {
+  map = getMap();
+  const divData = await fetchDivisons("nation");
+  plotMarkers(divData, code);
+};
+submit.addEventListener("click", async (e) => {
+  e.preventDefault();
+  let formCode = codeSelected.value;
+  let formScale = scaleSelected.value;
+  let formYearStart = yearStartSelected.value;
+  let formYearEnd = yearEndSelected.value;
+  if (code !== formCode) map = getMap();
+  code = formCode ? formCode : code;
+  scale = formScale ? formScale : scale;
+  yearStart = formYearStart ? formYearStart : yearStart;
+  yearEnd = formYearEnd ? formYearEnd : yearEnd;
+  alert(code + scale + yearStart + yearEnd);
+  const divData = await fetchDivisons();
+  plotMarkers(divData);
+});
 
-  Object.keys(jsonResp).forEach(async (key) => {
-    let loc = jsonResp[key][div[code]].Name;
-    if (arr[loc] !== undefined) {
-      arr[loc].push({
-        label: jsonResp[key].Year.toString(),
-        y: jsonResp[key][degScale[scale]],
-      });
-    } else {
-      arr[loc] = [
-        {
-          label: jsonResp[key].Year.toString(),
-          y: jsonResp[key][degScale[scale]],
-        },
-      ];
-    }
+document.onkeydown = (e) => {
+  if (e.keyCode == 27) {
+    modal.style.display = "none";
+  }
+};
+
+//TAG: FETCH DATA
+
+async function FetchPostType(url) {
+  const resp = await fetch(url, {
+    method: "POST",
+    body: "",
+    headers: {
+      "Content-type": "application/json; charset=UTF-8",
+    },
+  });
+  const json = await resp.json();
+  return json;
+}
+async function fetchDivisons() {
+  let resp = await fetch(`${baseUrl}/${code}`);
+  let json = await resp.json();
+  return json;
+}
+
+async function fetchYearData(loc, code, yearStart = 1895) {
+  let url = `${baseUrl}/${code}/${yearStart}/${loc}`;
+  let json = await FetchPostType(url);
+  return json;
+}
+
+async function fetchYearRangeData(loc) {
+  let url = `${baseUrl}/${code}/${yearStart}/${yearEnd}/${loc}`;
+  let json = await FetchPostType(url);
+  return json;
+}
+
+//TAG: PLOT RELATED FUNCTIONS
+const arrMarker = [];
+const plotMarkers = (divData) => {
+  divData.forEach(async (div) => {
+    let loc = div.Name;
     let data = await fetchCoordinates(loc);
     let coordinates = data.features[0].geometry.coordinates;
-    const marker = await addMarker(arr[loc], coordinates, loc);
-
-    const popup = marker.getPopup()._content.firstChild.click();
+    addMarker(coordinates).then((marker) => {
+      marker._element.onclick = () => PopupHandler(loc);
+      marker.getPopup()._content.style.display = "none";
+    });
   });
 };
 
-async function plotGraph(arr, loc, deg = "C") {
-  let chart = await new CanvasJS.Chart(loc, {
+async function PopupHandler(loc) {
+  modal.style.display = "block";
+  const yearData = await fetchYearRangeData(loc);
+  const resp = convertDataToGraphCoOrdinates(yearData);
+  modal.style.display = "block";
+  plotGraph(resp, loc);
+}
+
+function convertDataToGraphCoOrdinates(arr) {
+  const arrXY = [];
+  const scaleToShow = {
+    celcius: "TempInC",
+    fahrenheit: "TempInF",
+  };
+  arr.forEach((ele) => {
+    const loc = ele[code].Name;
+    arrXY.push({
+      label: ele.Year,
+      y: ele[scaleToShow[scale]],
+    });
+  });
+  return arrXY;
+}
+
+async function plotGraph(arr, loc) {
+  let chart = await new CanvasJS.Chart("modal", {
     exportEnabled: true,
     theme: "light1",
     title: {
-      text: `Year Wise Temp in ${deg} For ${loc}`,
+      text: `Year Wise Temp in ${scale} For ${loc}`,
     },
     axisY: {
       includeZero: true,
@@ -127,9 +181,3 @@ async function plotGraph(arr, loc, deg = "C") {
   });
   await chart.render();
 }
-
-const f = async (loc, elementArr) => {
-  const div = document.getElementById(loc);
-  //const jsonRes = JSON.parse(elementArr);
-  await plotGraph(elementArr, loc);
-};

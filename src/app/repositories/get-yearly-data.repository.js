@@ -36,6 +36,7 @@ const getYearlyData = async (code, yearStart, yearEnd) => {
       [Op.and]: [{ Year: { [Op.between]: [yearStart, yearEnd] } }],
     },
   });
+  if (code == "c") return data.slice(0, 500);
   return data;
 };
 module.exports = {
