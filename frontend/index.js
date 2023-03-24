@@ -237,9 +237,9 @@ const plotMarkers = (divData) => {
     let loc = div.Name;
     addMarker([div.lang, div.lat]).then((marker) => {
       marker._element.onclick = () => PopupHandler(loc);
-      console.log(marker.getPopup()._update);
       //marker.getPopup()._content.style.display = "none";
       marker.getPopup()._content.id = "charts";
+      marker.getPopup()._content.innerText = "Loading..";
       let tooltip = new mapboxgl.Popup({ offset: 25 }).setHTML(
         `<p style="padding:10px;">${loc}</p>`
       );
