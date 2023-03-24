@@ -4,6 +4,8 @@ let yearEnd = "1905";
 let code = "nation";
 let scale = "celcius";
 let map;
+let timeoutId = null;
+let data = {};
 
 //TAG: CONSTANTS
 const submit = document.querySelector("#btnSubmit");
@@ -20,28 +22,85 @@ const yearStartSelected = document.getElementById("YearStart");
 const yearEndSelected = document.getElementById("YearEnd");
 const plotDiv = document.getElementById("chartContainer");
 const baseUrl = `http://127.0.0.1:8000/v1`;
+let markersArr = [];
 
 // TAG: MAPBOX APIS AND SETTINGS
 mapboxgl.accessToken =
   "pk.eyJ1IjoieWFzaGdvZWwyOCIsImEiOiJjbGVjbjR1dGMxa3VyM3ZvNmszbWJiZjh2In0.mIWb0Fb03iisO3DHakRX9w";
 const getMap = () => {
   modal.style.display = "none";
+
   const map = new mapboxgl.Map({
     container: "map", // container ID
     style: "mapbox://styles/mapbox/streets-v11", // v11 for 2d and v12 for 3d
     center: [-97, 38], // starting position [lng, lat]
-    zoom: 5, // starting zoom
+    zoom: 3.5, // starting zoom
   });
+  map.on("move", (e) => {
+    clearTimeout(timeoutId);
+    loadMarkers();
+  });
+  map.on("load", (e) => {
+    clearTimeout(timeoutId);
+    loadMarkers();
+  });
+  map.on("zoomend", (e) => {
+    setTimeout(async () => {
+      let zoom = map.getZoom();
+      if (zoom <= 4.5) {
+        showDataZoomWise("nation");
+      } else if (zoom > 4.5 && zoom <= 6) {
+        showDataZoomWise("state");
+      } else {
+        showDataZoomWise("county");
+      }
+    }, 100);
+  });
+
   return map;
 };
-//geocoding:
-async function fetchCoordinates(loc) {
-  let coordinates = await fetch(
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${loc}.json?country=us&limit=2&access_token=pk.eyJ1IjoieWFzaGdvZWwyOCIsImEiOiJjbGVjbjR1dGMxa3VyM3ZvNmszbWJiZjh2In0.mIWb0Fb03iisO3DHakRX9w`
-  );
-  let json = await coordinates.json();
-  return json;
+
+function removeMarkers() {
+  markersArr.forEach((m) => {
+    m.remove();
+  });
 }
+async function showDataZoomWise(localCode) {
+  if (code !== localCode) {
+    code = localCode;
+    removeMarkers();
+    data = await fetchDivisons();
+    loadMarkers();
+  }
+}
+
+async function loadMarkers() {
+  timeoutId = setTimeout(async () => {
+    const topCoordinates = map.getBounds()._ne;
+    const endCoordinates = map.getBounds()._sw;
+    if (data) {
+      tempData = data.filter((d) => {
+        return (
+          d.lang <= topCoordinates.lng &&
+          d.lang >= endCoordinates.lng &&
+          d.lat <= topCoordinates.lat &&
+          d.lat >= endCoordinates.lat
+        );
+      });
+      removeMarkers();
+      plotMarkers(tempData);
+    }
+  }, 500);
+}
+
+//geocoding:
+// async function fetchCoordinates(loc) {
+//   let coordinates = await fetch(
+//     `https://api.mapbox.com/geocoding/v5/mapbox.places/${loc}.json?country=us&limit=2&access_token=pk.eyJ1IjoieWFzaGdvZWwyOCIsImEiOiJjbGVjbjR1dGMxa3VyM3ZvNmszbWJiZjh2In0.mIWb0Fb03iisO3DHakRX9w`
+//   );
+//   let json = await coordinates.json();
+//   return json;
+// }
 
 //TAG: ADD MARKERS
 async function addMarker(coordinates) {
@@ -60,28 +119,77 @@ async function addMarker(coordinates) {
 }
 
 //TAG: EVENT LISTENERS
+yearEndSelected.onfocus = () => {
+  if (yearEndSelected.value < yearStartSelected.value)
+    yearEndSelected.value = value = yearStartSelected.value;
+  yearEndSelected.min = yearStartSelected.value;
+};
+yearStartSelected.onchange = () => {
+  if (yearEndSelected.value < yearStartSelected.value)
+    yearEndSelected.value = value = yearStartSelected.value;
+  yearEndSelected.min = yearStartSelected.value;
+};
 body.onclick = () => {
   modal.style.display = "none";
 };
 window.onload = async () => {
+  markersArr = [];
   map = getMap();
-  const divData = await fetchDivisons("nation");
-  plotMarkers(divData, code);
+  data = await fetchDivisons();
+  codeSelected.value = code;
+  yearStartSelected.value = yearStart;
+  yearEndSelected.value = yearEnd;
+  scaleSelected.value = scale;
+  //plotMarkers(data);
 };
+
 submit.addEventListener("click", async (e) => {
   e.preventDefault();
   let formCode = codeSelected.value;
   let formScale = scaleSelected.value;
   let formYearStart = yearStartSelected.value;
   let formYearEnd = yearEndSelected.value;
-  if (code !== formCode) map = getMap();
+  const topCoordinates = map.getBounds()._ne;
+  const endCoordinates = map.getBounds()._sw;
+  const centerLang = topCoordinates.lng / 2 + endCoordinates.lng / 2;
+  const centerLat = topCoordinates.lat / 2 + endCoordinates.lat / 2;
+  removeMarkers();
+  //map._removeMarker;
   code = formCode ? formCode : code;
   scale = formScale ? formScale : scale;
   yearStart = formYearStart ? formYearStart : yearStart;
   yearEnd = formYearEnd ? formYearEnd : yearEnd;
-  alert(code + scale + yearStart + yearEnd);
-  const divData = await fetchDivisons();
-  plotMarkers(divData);
+  if (code == "county") {
+    map.easeTo({
+      zoom: 6.5,
+      center: [centerLang, centerLat],
+      duration: 500,
+      easing: function (t) {
+        return t;
+      },
+    });
+  } else if (code == "state") {
+    map.easeTo({
+      zoom: 5,
+      center: [centerLang, centerLat],
+      duration: 500,
+      easing: function (t) {
+        return t;
+      },
+    });
+  } else {
+    map.easeTo({
+      zoom: 3.5,
+      center: [centerLang, centerLat],
+      duration: 500,
+      easing: function (t) {
+        return t;
+      },
+    });
+  }
+  markersArr = [];
+  data = await fetchDivisons();
+  //plotMarkers(data);
 });
 
 document.onkeydown = (e) => {
@@ -91,7 +199,6 @@ document.onkeydown = (e) => {
 };
 
 //TAG: FETCH DATA
-
 async function FetchPostType(url) {
   const resp = await fetch(url, {
     method: "POST",
@@ -109,11 +216,11 @@ async function fetchDivisons() {
   return json;
 }
 
-async function fetchYearData(loc, code, yearStart = 1895) {
-  let url = `${baseUrl}/${code}/${yearStart}/${loc}`;
-  let json = await FetchPostType(url);
-  return json;
-}
+// async function fetchYearData(loc, code, yearStart = 1895) {
+//   let url = `${baseUrl}/${code}/${yearStart}/${loc}`;
+//   let json = await FetchPostType(url);
+//   return json;
+// }
 
 async function fetchYearRangeData(loc) {
   let url = `${baseUrl}/${code}/${yearStart}/${yearEnd}/${loc}`;
@@ -122,15 +229,13 @@ async function fetchYearRangeData(loc) {
 }
 
 //TAG: PLOT RELATED FUNCTIONS
-const arrMarker = [];
 const plotMarkers = (divData) => {
   divData.forEach(async (div) => {
     let loc = div.Name;
-    let data = await fetchCoordinates(loc);
-    let coordinates = data.features[0].geometry.coordinates;
-    addMarker(coordinates).then((marker) => {
+    addMarker([div.lang, div.lat]).then((marker) => {
       marker._element.onclick = () => PopupHandler(loc);
       marker.getPopup()._content.style.display = "none";
+      markersArr.push(marker);
     });
   });
 };
@@ -139,6 +244,7 @@ async function PopupHandler(loc) {
   modal.style.display = "block";
   const yearData = await fetchYearRangeData(loc);
   const resp = convertDataToGraphCoOrdinates(yearData);
+  resp.sort(compare);
   modal.style.display = "block";
   plotGraph(resp, loc);
 }
@@ -180,4 +286,14 @@ async function plotGraph(arr, loc) {
     ],
   });
   await chart.render();
+}
+
+function compare(a, b) {
+  if (a.label < b.label) {
+    return -1;
+  }
+  if (a.label > b.label) {
+    return 1;
+  }
+  return 0;
 }

@@ -7,7 +7,8 @@ const getCountyYearlyInRangeData = async (yearStart, yearEnd, name) => {
     include: [
       {
         model: CountyModel,
-        required: true,
+        right: true,
+        required: false,
         where: { Name: { [Op.eq]: name } },
       },
     ],

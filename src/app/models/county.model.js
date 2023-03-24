@@ -11,6 +11,8 @@ const CountyModel = sequelize.define(
       type: DataTypes.INTEGER,
       unique: true,
     },
+    lang: DataTypes.FLOAT,
+    lat: DataTypes.FLOAT,
   },
   { underscored: true }
 );
