@@ -143,7 +143,7 @@ window.onload = async () => {
   yearStartSelected.value = yearStart;
   yearEndSelected.value = yearEnd;
   scaleSelected.value = scale;
-  //plotMarkers(data);
+  plotMarkers(data);
 };
 
 submit.addEventListener("click", async (e) => {
