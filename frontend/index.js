@@ -21,7 +21,8 @@ const loader = document.getElementsByClassName("loader")[0];
 const yearStartSelected = document.getElementById("YearStart");
 const yearEndSelected = document.getElementById("YearEnd");
 const plotDiv = document.getElementById("chartContainer");
-const baseUrl = `http://127.0.0.1:8000/v1`;
+//const baseUrl = `http://127.0.0.1:8000/v1`;
+const baseUrl = `https://temp.yashgoel4.repl.co/v1`;
 let markersArr = [];
 
 // TAG: MAPBOX APIS AND SETTINGS
