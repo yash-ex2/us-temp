@@ -15,9 +15,9 @@ const codeSelected = document.querySelector("#division");
 const yearSelected = document.querySelector("#year");
 const scaleSelected = document.querySelector("#scale");
 const loader = document.getElementsByClassName("loader")[0];
-const span = document.getElementsByClassName("close")[0];
-const modal = document.getElementById("chartContainer");
-const modalContent = modal.getElementsByClassName("modal-content")[0];
+//const span = document.getElementsByClassName("close")[0];
+//const modal = document.getElementById("chartContainer");
+//const modalContent = modal.getElementsByClassName("modal-content")[0];
 const yearStartSelected = document.getElementById("YearStart");
 const yearEndSelected = document.getElementById("YearEnd");
 const plotDiv = document.getElementById("chartContainer");
@@ -28,7 +28,7 @@ let markersArr = [];
 mapboxgl.accessToken =
   "pk.eyJ1IjoieWFzaGdvZWwyOCIsImEiOiJjbGVjbjR1dGMxa3VyM3ZvNmszbWJiZjh2In0.mIWb0Fb03iisO3DHakRX9w";
 const getMap = () => {
-  modal.style.display = "none";
+  //modal.style.display = "none";
 
   const map = new mapboxgl.Map({
     container: "map", // container ID
@@ -45,16 +45,17 @@ const getMap = () => {
     loadMarkers();
   });
   map.on("zoomend", (e) => {
-    setTimeout(async () => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(async () => {
       let zoom = map.getZoom();
-      if (zoom <= 4.5) {
+      if (zoom < 4.5) {
         showDataZoomWise("nation");
-      } else if (zoom > 4.5 && zoom <= 6) {
+      } else if (zoom > 4.5 && zoom < 6) {
         showDataZoomWise("state");
       } else {
         showDataZoomWise("county");
       }
-    }, 100);
+    }, 500);
   });
 
   return map;
@@ -68,6 +69,7 @@ function removeMarkers() {
 async function showDataZoomWise(localCode) {
   if (code !== localCode) {
     code = localCode;
+    codeSelected.value = code;
     removeMarkers();
     data = await fetchDivisons();
     loadMarkers();
@@ -130,7 +132,7 @@ yearStartSelected.onchange = () => {
   yearEndSelected.min = yearStartSelected.value;
 };
 body.onclick = () => {
-  modal.style.display = "none";
+  //modal.style.display = "none";
 };
 window.onload = async () => {
   markersArr = [];
@@ -189,12 +191,12 @@ submit.addEventListener("click", async (e) => {
   }
   markersArr = [];
   data = await fetchDivisons();
-  //plotMarkers(data);
+  plotMarkers(data);
 });
 
 document.onkeydown = (e) => {
   if (e.keyCode == 27) {
-    modal.style.display = "none";
+    //modal.style.display = "none";
   }
 };
 
@@ -234,18 +236,33 @@ const plotMarkers = (divData) => {
     let loc = div.Name;
     addMarker([div.lang, div.lat]).then((marker) => {
       marker._element.onclick = () => PopupHandler(loc);
-      marker.getPopup()._content.style.display = "none";
+      console.log(marker.getPopup()._update);
+      //marker.getPopup()._content.style.display = "none";
+      marker.getPopup()._content.id = "charts";
+      let tooltip = new mapboxgl.Popup({ offset: 25 }).setHTML(
+        `<p style="padding:10px;">${loc}</p>`
+      );
+
+      marker._element.addEventListener("mouseenter", function () {
+        tooltip.setLngLat(marker.getLngLat());
+        tooltip.addTo(map);
+      });
+
+      marker._element.addEventListener("mouseleave", function () {
+        tooltip.remove();
+      });
+
       markersArr.push(marker);
     });
   });
 };
 
 async function PopupHandler(loc) {
-  modal.style.display = "block";
+  //modal.style.display = "block";
   const yearData = await fetchYearRangeData(loc);
   const resp = convertDataToGraphCoOrdinates(yearData);
   resp.sort(compare);
-  modal.style.display = "block";
+  // modal.style.display = "block";
   plotGraph(resp, loc);
 }
 
@@ -266,7 +283,7 @@ function convertDataToGraphCoOrdinates(arr) {
 }
 
 async function plotGraph(arr, loc) {
-  let chart = await new CanvasJS.Chart("modal", {
+  let chart = await new CanvasJS.Chart("charts", {
     exportEnabled: true,
     theme: "light1",
     title: {

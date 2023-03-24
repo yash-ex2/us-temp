@@ -4,7 +4,9 @@ const { object } = require("webidl-conversions");
 const { CountyModel } = require("../models/county.model");
 
 const getCountyData = async () => {
-  const data = await CountyModel.findAll();
+  const data = await CountyModel.findAll({
+    attributes: ["Name", "lang", "lat"],
+  });
   return data;
 };
 module.exports = {

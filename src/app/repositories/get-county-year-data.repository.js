@@ -8,12 +8,14 @@ const getCountyYearlyData = async (year, name) => {
       {
         model: CountyModel,
         required: true,
+        attributes: ["Name", "lang", "lat"],
         where: { Name: { [Op.eq]: name } },
       },
     ],
     where: {
       [Op.and]: [{ Year: { [Op.eq]: [year] } }],
     },
+    attributes: ["Year", "TempInC", "TempInF"],
   });
   return data;
 };

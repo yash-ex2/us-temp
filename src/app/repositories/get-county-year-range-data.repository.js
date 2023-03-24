@@ -9,12 +9,14 @@ const getCountyYearlyInRangeData = async (yearStart, yearEnd, name) => {
         model: CountyModel,
         right: true,
         required: false,
+        attributes: ["Name", "lang", "lat"],
         where: { Name: { [Op.eq]: name } },
       },
     ],
     where: {
       [Op.and]: [{ Year: { [Op.between]: [yearStart, yearEnd] } }],
     },
+    attributes: ["Year", "TempInC", "TempInF"],
   });
   return data;
 };

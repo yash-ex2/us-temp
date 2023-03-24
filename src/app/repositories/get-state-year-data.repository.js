@@ -7,11 +7,13 @@ const getStateYearlyData = async (year, name) => {
     include: [
       {
         model: StateModel,
+        attributes: ["Name", "lang", "lat"],
         required: true,
         where: { Name: { [Op.eq]: name } },
       },
     ],
     where: { Year: { [Op.eq]: [year] } },
+    attributes: ["Year", "TempInC", "TempInF"],
   });
   return data;
 };

@@ -7,7 +7,7 @@ const getNationYearlyData = async (year, name) => {
     include: [
       {
         model: NationModel,
-        attributes: Name,
+        attributes: ["Name", "lang", "lat"],
         required: true,
         where: { Name: { [Op.eq]: name } },
       },
@@ -15,6 +15,7 @@ const getNationYearlyData = async (year, name) => {
     where: {
       [Op.and]: [{ Year: { [Op.eq]: [year] } }],
     },
+    attributes: ["Year", "TempInC", "TempInF"],
   });
   return data;
 };

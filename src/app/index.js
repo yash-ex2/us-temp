@@ -18,9 +18,9 @@ app.use(bodyParser.json());
 
 app.use("/v1", routes);
 
-const URL = `postgres://ygoel:rYlMD4X7swge@ep-snowy-pond-244967.ap-southeast-1.aws.neon.tech:5432/neondb?sslmode=require`;
+//const URL = `postgres://ygoel:rYlMD4X7swge@ep-snowy-pond-244967.ap-southeast-1.aws.neon.tech:5432/neondb?sslmode=require`;
 
-const sql = postgres(URL, { sslmode: "require" });
+//const sql = postgres(URL, { sslmode: "require" });
 
 const syncFunc = async () => {
   Object.keys(models).forEach(async (model) => {

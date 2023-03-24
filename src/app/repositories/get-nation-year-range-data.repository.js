@@ -8,12 +8,14 @@ const getNationYearlyInRangeData = async (yearStart, yearEnd, name) => {
       {
         model: NationModel,
         required: true,
+        attributes: ["Name", "lang", "lat"],
         where: { Name: { [Op.eq]: name } },
       },
     ],
     where: {
       [Op.and]: [{ Year: { [Op.between]: [yearStart, yearEnd] } }],
     },
+    attributes: ["Year", "TempInC", "TempInF"],
   });
   return data;
 };
