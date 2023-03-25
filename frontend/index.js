@@ -14,10 +14,10 @@ const form = document.querySelector("#from");
 const codeSelected = document.querySelector("#division");
 const yearSelected = document.querySelector("#year");
 const scaleSelected = document.querySelector("#scale");
-const loader = document.getElementsByClassName("loader")[0];
-//const span = document.getElementsByClassName("close")[0];
-//const modal = document.getElementById("chartContainer");
-//const modalContent = modal.getElementsByClassName("modal-content")[0];
+// const loader = document.getElementsByClassName("loader")[0];
+// const span = document.getElementsByClassName("close")[0];
+// const modal = document.getElementById("chartContainer");
+// const modalContent = modal.getElementsByClassName("modal-content")[0];
 const yearStartSelected = document.getElementById("YearStart");
 const yearEndSelected = document.getElementById("YearEnd");
 const plotDiv = document.getElementById("chartContainer");
@@ -96,15 +96,6 @@ async function loadMarkers() {
   }, 500);
 }
 
-//geocoding:
-// async function fetchCoordinates(loc) {
-//   let coordinates = await fetch(
-//     `https://api.mapbox.com/geocoding/v5/mapbox.places/${loc}.json?country=us&limit=2&access_token=pk.eyJ1IjoieWFzaGdvZWwyOCIsImEiOiJjbGVjbjR1dGMxa3VyM3ZvNmszbWJiZjh2In0.mIWb0Fb03iisO3DHakRX9w`
-//   );
-//   let json = await coordinates.json();
-//   return json;
-// }
-
 //TAG: ADD MARKERS
 async function addMarker(coordinates) {
   const marker2 = new mapboxgl.Marker({
@@ -133,6 +124,9 @@ yearStartSelected.onchange = () => {
   yearEndSelected.min = yearStartSelected.value;
 };
 body.onclick = () => {
+  //modal.style.display = "none";
+};
+body.onmouseup = () => {
   //modal.style.display = "none";
 };
 window.onload = async () => {
@@ -219,12 +213,6 @@ async function fetchDivisons() {
   return json;
 }
 
-// async function fetchYearData(loc, code, yearStart = 1895) {
-//   let url = `${baseUrl}/${code}/${yearStart}/${loc}`;
-//   let json = await FetchPostType(url);
-//   return json;
-// }
-
 async function fetchYearRangeData(loc) {
   let url = `${baseUrl}/${code}/${yearStart}/${yearEnd}/${loc}`;
   let json = await FetchPostType(url);
@@ -236,8 +224,9 @@ const plotMarkers = (divData) => {
   divData.forEach(async (div) => {
     let loc = div.Name;
     addMarker([div.lang, div.lat]).then((marker) => {
-      marker._element.onclick = () => PopupHandler(loc);
-      //marker.getPopup()._content.style.display = "none";
+      marker._element.onclick = (e) => PopupHandler(loc, e, marker);
+
+      //  marker.getPopup()._content.style.display = "none";
       marker.getPopup()._content.id = "charts";
       marker.getPopup()._content.innerText = "Loading..";
       let tooltip = new mapboxgl.Popup({ offset: 25 }).setHTML(
@@ -258,13 +247,59 @@ const plotMarkers = (divData) => {
   });
 };
 
-async function PopupHandler(loc) {
-  //modal.style.display = "block";
+async function PopupHandler(loc, e, marker) {
   const yearData = await fetchYearRangeData(loc);
   const resp = convertDataToGraphCoOrdinates(yearData);
   resp.sort(compare);
-  // modal.style.display = "block";
+  const popup = marker.getPopup();
+  if (resp.length == 0) {
+    popup._content.style.width = "100px";
+    popup._content.style.height = "50px";
+    popup._content.style.fontWeight = "500";
+    popup._content.style.fontSize = "15px";
+    popup._content.innerText = "No record found";
+    return;
+  }
+  //modal.style.display = "block";
   plotGraph(resp, loc);
+  const clickpos = { y: e.clientX, x: e.clientY };
+  const mappos = {
+    top: map._canvas.getBoundingClientRect().top,
+    bottom: map._canvas.getBoundingClientRect().bottom,
+    right: map._canvas.getBoundingClientRect().right,
+    left: map._canvas.getBoundingClientRect().left,
+    centerx:
+      map._canvas.getBoundingClientRect().top / 2 +
+      map._canvas.getBoundingClientRect().bottom / 2,
+    centery:
+      map._canvas.getBoundingClientRect().left / 2 +
+      map._canvas.getBoundingClientRect().right / 2,
+  };
+
+  if (
+    clickpos.x >= mappos.top &&
+    clickpos.x <= mappos.centerx &&
+    clickpos.y >= mappos.left &&
+    clickpos.y <= mappos.centery
+  ) {
+    marker.getPopup().setOffset("top");
+  } else if (
+    clickpos.x >= mappos.centerx &&
+    clickpos.x <= mappos.bottom &&
+    clickpos.y >= mappos.left &&
+    clickpos.y <= mappos.centery
+  ) {
+    marker.getPopup().setOffset("bottom");
+  } else if (
+    clickpos.x >= mappos.centerx &&
+    clickpos.x <= mappos.bottom &&
+    clickpos.y >= mappos.centery &&
+    clickpos.y <= mappos.right
+  ) {
+    marker.getPopup().setOffset("bottom");
+  } else {
+    marker.getPopup().setOffset("top");
+  }
 }
 
 function convertDataToGraphCoOrdinates(arr) {
@@ -273,6 +308,7 @@ function convertDataToGraphCoOrdinates(arr) {
     celcius: "TempInC",
     fahrenheit: "TempInF",
   };
+
   arr.forEach((ele) => {
     const loc = ele[code].Name;
     arrXY.push({

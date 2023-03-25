@@ -109,6 +109,9 @@ input[type="number"] {
   text-align: center;
   margin: 0;
 }
+.mapboxgl-popup {
+  max-width: 800px !important;
+}
 .mapboxgl-popup-anchor-bottom {
   width: fit-content !important;
   height: fit-content !important;
